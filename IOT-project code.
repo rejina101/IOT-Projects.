@@ -1,0 +1,79 @@
+Code 
+// defines pins numbers 
+const int trigPin = 9; 
+const int echoPin = 10; 
+const int buzzer = 11; 
+const int ledPin = 13; 
+// defines variables 
+long duration; 
+int distance; 
+int safetyDistance = 18;  // set your desired minimum water level (in cm) 
+int criticalDistance = 4; // set your critical water level (less than 4 cm) 
+// defines timing for LED blinking 
+unsigned long previousMillis = 0;  
+const long blinkInterval = 250;  // LED blink interval (250 ms for fast blinking) 
+bool ledState = LOW;  // LED state (off initially) 
+// defines buzzer timing 
+unsigned long lastBuzzerTime = 0; 
+const long beepDuration = 200;  // Duration of each beep (200 ms) 
+const long beepInterval = 300;  // Time between beeps (300 ms) 
+
+void setup() { 
+pinMode(trigPin, OUTPUT);   // Sets the trigPin as an Output 
+pinMode(echoPin, INPUT);    // Sets the echoPin as an Input 
+pinMode(buzzer, OUTPUT); 
+pinMode(ledPin, OUTPUT); 
+Serial.begin(9600);         
+} 
+void loop() { 
+// Clears the trigPin 
+// Starts the serial communication 
+digitalWrite(trigPin, LOW); 
+delayMicroseconds(2); 
+// Sets the trigPin on HIGH state for 10 micro seconds 
+digitalWrite(trigPin, HIGH); 
+delayMicroseconds(10); 
+digitalWrite(trigPin, LOW); 
+// Reads the echoPin, returns the sound wave travel time in microseconds 
+duration = pulseIn(echoPin, HIGH); 
+// Calculating the distance (in cm) 
+
+  distance = duration * 0.034 / 2; 
+ 
+  // Print the distance to Serial Monitor 
+  Serial.print("Distance: "); 
+  Serial.print(distance); 
+  Serial.println(" cm"); 
+ 
+  // Check water level 
+  if (distance > safetyDistance) { 
+    // Water level is LOW — alert 
+    digitalWrite(buzzer, HIGH); 
+    digitalWrite(ledPin, HIGH); 
+  }  
+  else if (distance <= criticalDistance) { 
+    // Water level is critically low (less than 4 cm) — fast blink LED and beep buzzer 
+    unsigned long currentMillis = millis(); 
+ 
+    // Blink LED rapidly (every 250 ms) 
+    if (currentMillis - previousMillis >= blinkInterval) { 
+      previousMillis = currentMillis; 
+      ledState = !ledState;  // Toggle the LED state 
+      digitalWrite(ledPin, ledState);  // Apply the new LED state 
+    } 
+ 
+    // Buzzer beeps in bursts ("bep bep bep") with intervals 
+    if (currentMillis - lastBuzzerTime >= beepInterval) { 
+      lastBuzzerTime = currentMillis; 
+      digitalWrite(buzzer, HIGH);  // Turn on buzzer 
+      delay(beepDuration);         // Buzzer on for 200 ms 
+      digitalWrite(buzzer, LOW);   // Turn off buzzer 
+    } 
+  }  
+  else { 
+    // Water level is OK 
+    digitalWrite(buzzer, LOW); 
+    digitalWrite(ledPin, LOW); 
+  } 
+  delay(50); // short delay before next reading 
+}
